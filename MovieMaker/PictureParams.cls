@@ -38,7 +38,7 @@ framesFreq = 1
 empty_filter = 0
 red_filter = 0
 cherry_filter = 1
-ko_filter = 2
+ko_filter = 2'TODO:Check if nedded
 gfp_filter = 3
 yfp_filter = 3
 cfp_filter = 3
@@ -145,7 +145,7 @@ Public Sub copyPictureParams(src As PictureParams)
 	SetFrameFreq(src.GetFrameFreq)
 End Sub
 
-Public Function GetPicName() As String
+Public Function GetPicName() As String 'TODO:Check if needed
 	Dim pName As String
 	If is_phase = True Then
 		pName = "ph"

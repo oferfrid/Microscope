@@ -162,10 +162,12 @@ Public Sub FlouAcquisition(ByVal picParams As PictureParams)
 End Sub
 
 Public Sub InitializePreviewMode()
+	LogErr("Before init PreviewMode")
 	Call FastMode() 'added 17.5.09
     ret = IpDcamScanMode(DCAM_SCANMODE_FAST)
     ret = IpDcamGain(0)
     moveToFilterNum (red_filter)
+    LogErr("After init PreviewMode")
 End Sub
 
 Public Sub SlowMode()
@@ -188,38 +190,54 @@ End Sub
 
 
 Public Sub StartPreview()
+	LogErr("Before start PreviewMode")
 	Call InternalMode() 'added 17.5.09
 	ret = IpDcamTriggerMode(DCAM_TRIGGER_INTERNAL)
     ret = IpScopeSetPosition(SCP_LIGHT_PATH, 1) 'open bottom port
     Call OpenPhaseShutter
     ret = IpAcqShow(ACQ_LIVE, 1)
+    LogErr("After start PreviewMode")
 End Sub
 
 Public Sub StopPreview()
+	LogErr("Before stop PreviewMode")
     ret = IpAcqShow(ACQ_LIVE, 0)
     Call ClosePhaseShutter
     ret = IpDcamTriggerMode(DCAM_TRIGGER_SOFTWARE)
+    LogErr("After stop PreviewMode")
 End Sub
 
 Public Sub SetAcquisitionStart(ByVal picParams As PictureParams)
+	LogErr("Before setAcquisitionStart")
     SetGain (picParams)
     SetExposureTime (picParams)
     moveToFilter(picParams)
     ret = IpMacroWait(1)
+    LogErr("Before calling camera triggerMode")
     ret = IpDcamTriggerMode(DCAM_TRIGGER_SOFTWARE) 'already set for all movies in main 18/6/2008
+    LogErr("Before calling camera to acquire")
     ret = IpDcamStartAcquire(1) 'will start acquisition only upon trigger
+    LogErr("After setAcquisitionStart")
 End Sub
 Private Sub SetAcquisitionEnd()
+	LogErr("Before calling camera to stop acquire")
   ret = IpDcamStopAcquire()
+  LogErr("after calling camera to stop acquire")
 End Sub
 Private Sub TriggerCamera()
+	LogErr("Before trigger camera")
 	ret=IpDcamStartAcquire(1)   'will start acquisition only upon trigger - added here 18/6/2008
     ret = IpDcamFireTrigger()   'trigger to acquire
+    LogErr("Before wait")
     ret = IpDcamWaitEvent(DCAM_WAIT_VVALIDBEGIN, timeout)
+    LogErr("After trigger camera")
 End Sub
 Private Sub TransferFrame()
+	LogErr("Before transferFrame")
     ret = IpDcamWaitEvent(DCAM_WAIT_FRAMEEND, timeout)
+    Call CloseActiveWindow()
     ret = IpDcamTransferImages(ACQ_CURRENT) 'transfer frames to current window
+    LogErr("After transferFrame")
 End Sub
 
   

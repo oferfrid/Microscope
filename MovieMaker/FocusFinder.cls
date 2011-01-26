@@ -25,7 +25,7 @@ Private stepZ As Single 'stepZ is the step size made by the stage when scanning 
 
 Private frameNum As Integer 'framenum is the number of pics taken to determine the best focus.
 
-'Private picControl As New PictureController
+Private picControl As New PictureController
 Private exposureTime As Single
 Private unintializedZ As Single
 
@@ -40,16 +40,16 @@ Private picParams As New PictureParams
 Private Sub Class_Initialize()
     stepZ = 0.001
     frameNum = 20
-    exposureTime = 60
+    exposureTime = 40
     picParams.SetFrameFreq (1)
     picParams.SetExposureTime (exposureTime)
     picParams.SetEmptyFilter
-    picParams.SetGain (0)
+    picParams.SetGain (100)
     unintializedZ = 10000
     locationsNum=0
 
 End Sub
-Public Sub FindFocus(picControl As PictureController, ByVal locationNum As Integer, aoirect As RECT)
+Public Sub FindFocus(ByVal locationNum As Integer, aoirect As RECT )
     Dim stdmax As Single
     Dim stdcurr As Single
     Dim framebest As Integer
@@ -75,7 +75,7 @@ Public Sub FindFocus(picControl As PictureController, ByVal locationNum As Integ
     For i = 1 To frameNum
 		stgControl.MoveZBy(stepZ)
     	zcoord = stgControl.GetZCoord()
-    	Debug.Print "count:"; i; " zcoord: "; zcoord; "  ";
+    	Debug.Print i; " z "; zcoord; "  ";
     	picControl.QuickPhaseAcquisition()
     	If(i=1) Then
 			ret = IpDrSet(DR_RANGE, -1, IPNULL) 'get all range display
@@ -85,14 +85,14 @@ Public Sub FindFocus(picControl As PictureController, ByVal locationNum As Integ
     	ret = IpFltVariance(5, 5)                'filter to detect and emphasize edges and textures
     	ret = IpHstGet(GETSTATS, 0, stats(0))    'gets the histogram parameters of the aoi stats(0) is mean and stats(1) is std
     	stddev(i) = stats(1)               'compares standart deviation of the frames
-    	Debug.Print "this stddev"; stddev(i); "  ";
+    	Debug.Print "stddev"; stddev(i); "  ";
     	If stddev(i) > stdmax Then
       		stdmax = stddev(i)           'searches for maximal std deviation
       		framebest = i
       		bestz = zcoord
     	End If
     
-    	Debug.Print "best frame "; framebest; " max stddev "; stdmax
+    	Debug.Print "best "; framebest; " maxstddev "; stdmax
     Next i
     picControl.ClosePhaseShutter
 
