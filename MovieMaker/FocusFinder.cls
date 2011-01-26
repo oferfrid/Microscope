@@ -12,7 +12,6 @@ Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 '#Uses "StageController.cls"
-'#Uses "LedPictureController.cls"
 '#Uses "PictureController.cls"
 '#Uses "Location.cls"
 '#Uses "PictureParams.cls"
@@ -26,9 +25,7 @@ Private stepZ As Single 'stepZ is the step size made by the stage when scanning 
 
 Private frameNum As Integer 'framenum is the number of pics taken to determine the best focus.
 
-Private picControl As New PictureController
-'Private picControl As LedPictureController ' changed to the LedPictureController instead of regular on 21.1.10
-
+'Private picControl As New PictureController
 Private exposureTime As Single
 Private unintializedZ As Single
 
@@ -43,16 +40,16 @@ Private picParams As New PictureParams
 Private Sub Class_Initialize()
     stepZ = 0.001
     frameNum = 20
-    exposureTime = 40
+    exposureTime = 60
     picParams.SetFrameFreq (1)
     picParams.SetExposureTime (exposureTime)
     picParams.SetEmptyFilter
-    picParams.SetGain (100)
+    picParams.SetGain (0)
     unintializedZ = 10000
     locationsNum=0
 
 End Sub
-Public Sub FindFocus(ByVal locationNum As Integer, aoirect As RECT )
+Public Sub FindFocus(picControl As PictureController, ByVal locationNum As Integer, aoirect As RECT)
     Dim stdmax As Single
     Dim stdcurr As Single
     Dim framebest As Integer
@@ -78,8 +75,8 @@ Public Sub FindFocus(ByVal locationNum As Integer, aoirect As RECT )
     For i = 1 To frameNum
 		stgControl.MoveZBy(stepZ)
     	zcoord = stgControl.GetZCoord()
-    	Debug.Print i; " z "; zcoord; "  ";
-    	picControl.QuickPhaseAcquisition(picParams)
+    	Debug.Print "count:"; i; " zcoord: "; zcoord; "  ";
+    	picControl.QuickPhaseAcquisition()
     	If(i=1) Then
 			ret = IpDrSet(DR_RANGE, -1, IPNULL) 'get all range display
 		End If
@@ -88,14 +85,14 @@ Public Sub FindFocus(ByVal locationNum As Integer, aoirect As RECT )
     	ret = IpFltVariance(5, 5)                'filter to detect and emphasize edges and textures
     	ret = IpHstGet(GETSTATS, 0, stats(0))    'gets the histogram parameters of the aoi stats(0) is mean and stats(1) is std
     	stddev(i) = stats(1)               'compares standart deviation of the frames
-    	Debug.Print "stddev"; stddev(i); "  ";
+    	Debug.Print "this stddev"; stddev(i); "  ";
     	If stddev(i) > stdmax Then
       		stdmax = stddev(i)           'searches for maximal std deviation
       		framebest = i
       		bestz = zcoord
     	End If
     
-    	Debug.Print "best "; framebest; " maxstddev "; stdmax
+    	Debug.Print "best frame "; framebest; " max stddev "; stdmax
     Next i
     picControl.ClosePhaseShutter
 
@@ -152,10 +149,6 @@ Public Sub SetExposureTime(ByVal Time As Single)
     exposureTime = Time
     picParams.SetExposureTime (Time)
 End Sub
-'Public Sub setPictureController(picC As LedPictureController)
-	'picControl= picC
-'End Sub
-
 
 Private Sub MoveToLastZ(ByVal locationNum As Integer)  'moves to last z of this locationNum only if it had a good focus last time.
 		Dim z As Single
@@ -168,4 +161,3 @@ Private Sub MoveToLastZ(ByVal locationNum As Integer)  'moves to last z of this 
         	z = stgControl.GetZCoord()
         Debug.Print"after moveToLastZ : "; z
 End Sub
-

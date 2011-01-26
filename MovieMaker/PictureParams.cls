@@ -39,9 +39,9 @@ empty_filter = 0
 red_filter = 0
 cherry_filter = 1
 ko_filter = 2
-gfp_filter = 1
-yfp_filter = 2
-cfp_filter = 1
+gfp_filter = 3
+yfp_filter = 3
+cfp_filter = 3
 End Sub
 Public Sub SetFrameFreq(freq As Integer)
     framesFreq = freq
@@ -150,15 +150,14 @@ Public Function GetPicName() As String
 	If is_phase = True Then
 		pName = "ph"
 	Else
-	pName = "filter_" & mFilter
-		'Select Case mFilter
-		'	Case 1
-			'	pName = "Cherry"
-		'	Case 2
-		'		pName = "KO"
-			'Case 3
-			'	pName = "YFP"
-		'End Select
+		Select Case mFilter
+			Case 1
+				pName = "Cherry"
+			Case 2
+				pName = "KO"
+			Case 3
+				pName = "YFP"
+		End Select
 	End If
 	pName = pName$ &"_expo"&exposureTime
 	If focusOffset<>0 Then
