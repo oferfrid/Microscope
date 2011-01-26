@@ -1,0 +1,24 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+# SharpDevelop 2.2.1.2648
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoolLedControl", "CoolLedControl.csproj", "{644B4DAD-CCE7-4328-A8C8-A0D1057E12FC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LedTest", "LedControlTest\LedTest.csproj", "{FABC5A4F-84EA-48C5-AC2F-3C3CB15C62F5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{644B4DAD-CCE7-4328-A8C8-A0D1057E12FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{644B4DAD-CCE7-4328-A8C8-A0D1057E12FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{644B4DAD-CCE7-4328-A8C8-A0D1057E12FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{644B4DAD-CCE7-4328-A8C8-A0D1057E12FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FABC5A4F-84EA-48C5-AC2F-3C3CB15C62F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FABC5A4F-84EA-48C5-AC2F-3C3CB15C62F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FABC5A4F-84EA-48C5-AC2F-3C3CB15C62F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FABC5A4F-84EA-48C5-AC2F-3C3CB15C62F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+EndGlobal
