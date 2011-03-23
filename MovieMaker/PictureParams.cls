@@ -25,23 +25,10 @@ Private gain As Integer
 Private focusOffset As Single 'to be higher or lower in the Z axis from focus found
 Private empty_filter As Integer
 
-Private red_filter As Integer
-Private cherry_filter As Integer
-Private ko_filter As Integer
-Private gfp_filter As Integer
-Private yfp_filter As Integer
-Private cfp_filter As Integer
-
 Private Sub Class_Initialize()
 focusOffset = 0
 framesFreq = 1
 empty_filter = 0
-red_filter = 0
-cherry_filter = 1
-ko_filter = 2'TODO:Check if nedded
-gfp_filter = 3
-yfp_filter = 3
-cfp_filter = 3
 End Sub
 Public Sub SetFrameFreq(freq As Integer)
     framesFreq = freq
@@ -73,39 +60,16 @@ Public Function IsFlour() As Integer
         IsFlour = True
     End If
 End Function
-Public Sub SetGFPFilter()
-    mFilter = gfp_filter
-End Sub
-
-Public Sub SetCFPFilter()
-    mFilter = cfp_filter
-End Sub
-
-Public Sub SetYFPFilter()
-    mFilter = yfp_filter
-End Sub
-
-Public Sub SetCherryFilter()
-    mFilter = cherry_filter
-End Sub
-
-Public Sub SetKOFilter()
-    mFilter = ko_filter
-End Sub
 
 Public Sub SetEmptyFilter()
     mFilter = empty_filter
 End Sub
 
-Public Sub SetRedFilter()
-    mFilter = red_filter
-End Sub
-
-Public Function GetFilter() As Integer
-    GetFilter = mFilter
-End Function
 Public Function SetFilter(ByVal filterNum As Single)
 	mFilter =filterNum
+End Function
+Public Function GetFilter() As Integer
+    GetFilter = mfilter
 End Function
 
 
@@ -150,14 +114,7 @@ Public Function GetPicName() As String 'TODO:Check if needed
 	If is_phase = True Then
 		pName = "ph"
 	Else
-		Select Case mFilter
-			Case 1
-				pName = "Cherry"
-			Case 2
-				pName = "KO"
-			Case 3
-				pName = "YFP"
-		End Select
+		pName = "filter"&CStr(mfilter)
 	End If
 	pName = pName$ &"_expo"&exposureTime
 	If focusOffset<>0 Then
