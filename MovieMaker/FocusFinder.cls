@@ -58,7 +58,6 @@ Public Sub FindFocus(ByVal locationNum As Integer, aoirect As RECT )
     ReDim stddev(frameNum) As Single
     Dim zcoord As Single 'for debugging
 
-
     MoveToLastZ (locationNum)
     ipStgVal = stepZ * frameNum * (0.55 - badFocuses(locationNum) * 0.35) 'goes down a bit more than up ; if focus bad (pp.badfocus=1), goes mainly up
     zcoord = stgControl.GetZCoord()
