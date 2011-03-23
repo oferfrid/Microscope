@@ -54,7 +54,6 @@ Dim secToWait As Single
 Dim initPicArray As Boolean
 Dim toInitLocations As Boolean
 Dim initExp As Boolean
-Dim focusFinderInit As Boolean 'TODO:Check if needed (in base too).
 
 Sub InitializeParams()
 	minSecBtwnRounds=10
@@ -509,13 +508,13 @@ Private Function EditFunc(DlgItem$, Action%, SuppValue?) As Boolean
 			optBtnVal = DlgValue("GroupFilters")
 			Select Case optBtnVal
 				Case 0
-					tempPicParams.SetEmptyFilter
+					tempPicParams.setFilter(0)
 				Case 1
-					tempPicParams.SetCherryFilter
+					tempPicParams.SetFilter(1)
 				Case 2
-					tempPicParams.SetKOFilter
+					tempPicParams.SetFilter(2)
 				Case 3
-					tempPicParams.SetYFPFilter
+					tempPicParams.SetFilter(3)
 			End Select
 		End If
 		If initPicArray Then
@@ -585,9 +584,16 @@ Sub setInitLocations()
 	Next i
 
 End Sub
-
-
-
-
+'writes the current time to the lifeSaverUpdate file, overriding the current file
+Sub updateLifeSaverFile()
+	Dim lifeSaverPath As String
+	lifeSaverPath = "C:\Documents and Settings\Administrator\Desktop\microscope scripts Usable\lifeSaverIproUpdate.txt"
+	Dim iFileNo As Integer
+	iFileNo = FreeFile
+	Debug.Print "lifeSaverPath is: " & lifeSaverPath
+	Open lifeSaverPath For Output As iFileNo
+	Print #iFileNo, Now()
+	Close #iFileNo
+End Sub
 
 
