@@ -13,12 +13,16 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 '#Uses "PictureParams.cls"
 '#Uses "StageController.cls"
+'#Uses "Log.cls"
 'Class name : PictureController
 'Description : a class controlling the lighting
 'Author : Stefan De Prins
 'Mail : stefan.de.prins@pandora.be
 ' needs to pay attention to the filters numbers- is it reflects the microscope settings
 Option Explicit
+Dim errorLog As New Log
+Dim errlogTitle As String
+Dim errPathname As String*255
 Private exposureTime As Single
 Private gain As Integer
 Private timeout As Integer
@@ -30,9 +34,10 @@ Private gfp_filter As Integer
 Private yfp_filter As Integer
 Private cfp_filter As Integer
 Private focusOffset As Single
-'Private lampVoltage As Integer
 
 Private Sub Class_Initialize()
+	errlogTitle = "logging"
+	errPathname = "pictureController_errors"&Timer
     gain = 255
     timeout = 20000
     red_filter = 0
@@ -42,48 +47,51 @@ Private Sub Class_Initialize()
     yfp_filter = 3
     cfp_filter = 0
     focusOffset = 0.0002
-    'lampVoltage = -1
-
 End Sub
 
 Public Sub OpenPhaseShutter()
-	'If (lampVoltage = -1) Then
-	'	IpScopeGetPosition(SCP_LAMP1, lampVoltage)
-	'End If
-	'IpScopeSetPosition(SCP_LAMP1, lampVoltage)
-	'Debug.Print "opening shuter light: " & lampVoltage
+	LogErr("before open phase shutter ")
     ret = IpScopeControl(SCP_SETCURRSHUTTER, 0, 0, "", IPNULL)
     ret = IpScopeSetPosition(SCP_CURRSHUTTER, 1)
+    LogErr("after open phase shutter ")
 End Sub
 
 Public Sub ClosePhaseShutter()
-	'IpScopeGetPosition(SCP_LAMP1, lampVoltage)
-	'IpScopeSetPosition(SCP_LAMP1, 0)
-	'Debug.Print "closing shuter light: " & lampVoltage
+LogErr("before phase shutter close ")
     ret = IpScopeControl(SCP_SETCURRSHUTTER, 0, 0, "", IPNULL)
     ret = IpScopeSetPosition(SCP_CURRSHUTTER, 0)
-    
+    LogErr("after phase shutter close ")
 End Sub
 Public Sub OpenFluoShutter()
-	ret = IpScopeControl(SCP_SETCURRSHUTTER, 0, 2, "", IPNULL)
+LogErr("before open fluo shutter ")
+	ret = IpScopeControl(SCP_SETCURRSHUTTER, 0, 1, "", IPNULL)
     ret = IpScopeSetPosition(SCP_CURRSHUTTER, 1)
+    LogErr("after open fluo shutter ")
     End Sub
 Public Sub CloseFluoShutter()
-    ret = IpScopeControl(SCP_SETCURRSHUTTER, 0, 2, "", IPNULL)
+LogErr("before close fluo shutter ")
+    ret = IpScopeControl(SCP_SETCURRSHUTTER, 0, 1, "", IPNULL)
     ret = IpScopeSetPosition(SCP_CURRSHUTTER, 0)
+    LogErr("after close fluo shutter ")
 End Sub
 
 Public Sub moveToFilterNum(ByVal filterNum As Integer)
-    ret = IpScopeSetPosition(SCP_FWHEEL1, filterNum)
+LogErr("before move to filter num " & filterNum)
+     ret = IpScopeSetPosition(SCP_FWHEEL1, filterNum) 
+       LogErr("after move to filter num " & filterNum)
 End Sub
 
 Public Sub moveToFilter(ByVal picParams As PictureParams)
+
+LogErr("before move to filter picParams " & picParams.GetFilter())
    Dim filterNum As Integer
    filterNum = picParams.GetFilter
    moveToFilterNum (filterNum)
+    LogErr("After move to filter picParams ")
 End Sub
 
 Public Sub SetExposureTime(ByVal picParams As PictureParams)
+LogErr("before setExposure time ")
     Dim exposuresec As Single
     exposureTime = picParams.GetExposureTime()
     'Sets the exposure time in mseconds
@@ -92,16 +100,17 @@ Public Sub SetExposureTime(ByVal picParams As PictureParams)
     End If
     exposuresec = exposureTime / 1000
     IpDcamExposure (exposuresec)
-   
+   LogErr("after setExposure time ")
 End Sub
 
 Public Sub SetGain(ByVal picParams As PictureParams)
-    gain = picParams.GetGain()
+   LogErr("before setGain")
+   gain = picParams.GetGain()
     IpAcqControl(53, 1, gain)
     ret = IpDcamGain(gain)
+    LogErr("after setGain")
 End Sub
 Public Sub PicAcquisition(ByVal picParams As PictureParams)
-
     If picParams.IsPhase Then
         PhaseAcquisition (picParams)
     Else
@@ -114,13 +123,16 @@ Public Sub PhaseAcquisition(ByVal picParams As PictureParams)
 	Dim focusOffset As Single
     focusOffset = picParams.GetFocusOffset/1000
  	If focusOffset <> 0 Then
+ 	LogErr("Beforecall Moving Z")
   	  Call stgControl.MoveZBy(focusOffset)
+  	  LogErr("after call Moving Z")
     End If
     '########
 		Dim zz As Single
     	 ret = IpStageControl(GETZ, zz)
     	 Debug.Print("phaseAcquisition: taking picture at: "&zz)
     	 '########
+    	  LogErr("Before acquisitionStart")
     Call SetAcquisitionStart(picParams)
     Call triggerMode
     Call OpenPhaseShutter
@@ -128,6 +140,7 @@ Public Sub PhaseAcquisition(ByVal picParams As PictureParams)
     Call ClosePhaseShutter
     Call TransferFrame
     Call SetAcquisitionEnd
+     LogErr("after acquisitionStart")
     If focusOffset <> 0 Then ' return to focus
         stgControl.MoveZBy(-focusOffset)
     End If
@@ -146,16 +159,20 @@ Public Sub FlouAcquisition(ByVal picParams As PictureParams)
     Dim focusOffset As Single
     focusOffset = picParams.GetFocusOffset/1000
     If focusOffset <> 0 Then
+    	LogErr("Beforecall Moving Z")
         stgControl.MoveZBy(focusOffset)
+        LogErr("after call Moving Z")
     End If
+    LogErr("Before acquisitionStart")
     Call SetAcquisitionStart(picParams)
     Call triggerMode()
     Call OpenFluoShutter
     Call TriggerCamera
     Call CloseFluoShutter
-    Call TransferFrame
-    Call SetAcquisitionEnd
+ 	
+ 	Call TransferFrame
     Call FastMode()
+     LogErr("after acquisitionStart")
     If focusOffset <> 0 Then ' return to focus
         stgControl.MoveZBy(-focusOffset)
     End If
@@ -164,28 +181,36 @@ End Sub
 Public Sub InitializePreviewMode()
 	LogErr("Before init PreviewMode")
 	Call FastMode() 'added 17.5.09
-    ret = IpDcamScanMode(DCAM_SCANMODE_FAST)
     ret = IpDcamGain(0)
     moveToFilterNum (red_filter)
     LogErr("After init PreviewMode")
 End Sub
 
 Public Sub SlowMode()
+LogErr("Before slowMode")
 	ret = IpDcamScanMode(DCAM_SCANMODE_SLOW)
-	
+	LogErr("after slowMode")
 End Sub
 Public Sub FastMode()
+LogErr("Before fastMode")
 	ret = IpDcamScanMode(DCAM_SCANMODE_FAST)
+	LogErr("After fastMode")
 End Sub
 Public Sub InternalMode()
+LogErr("Before intermalMode")
 	ret = IpDcamTriggerMode(DCAM_TRIGGER_INTERNAL)
+	LogErr("afterintermalMode")
 End Sub
 Public Sub softwareMode()
+LogErr("Before softwareMode")
 	ret = IpDcamTriggerMode(DCAM_TRIGGER_SOFTWARE)
+	LogErr("After softwareMode")
 End Sub
 
 Public Sub triggerMode()
+LogErr("Before triggerMode")
 	ret=IpDcamStartAcquire(1)   'will start acquisition only upon trigger - added here 18/6/2008
+	LogErr("after triggerMode")
 End Sub
 
 
@@ -203,19 +228,17 @@ Public Sub StopPreview()
 	LogErr("Before stop PreviewMode")
     ret = IpAcqShow(ACQ_LIVE, 0)
     Call ClosePhaseShutter
-    ret = IpDcamTriggerMode(DCAM_TRIGGER_SOFTWARE)
-    LogErr("After stop PreviewMode")
+    Call softwareMode()
+LogErr("After stop PreviewMode")
 End Sub
 
 Public Sub SetAcquisitionStart(ByVal picParams As PictureParams)
-	LogErr("Before setAcquisitionStart")
+LogErr("Before setAcquisitionStart")
     SetGain (picParams)
     SetExposureTime (picParams)
     moveToFilter(picParams)
     ret = IpMacroWait(1)
-    LogErr("Before calling camera triggerMode")
-    ret = IpDcamTriggerMode(DCAM_TRIGGER_SOFTWARE) 'already set for all movies in main 18/6/2008
-    LogErr("Before calling camera to acquire")
+    Call softwareMode()
     ret = IpDcamStartAcquire(1) 'will start acquisition only upon trigger
     LogErr("After setAcquisitionStart")
 End Sub
@@ -240,7 +263,15 @@ Private Sub TransferFrame()
     LogErr("After transferFrame")
 End Sub
 
-  
+ Sub CloseActiveWindow
+ LogErr("Before closeActiveWin")
+		ret = IpDocClose() 'closing image to avoid multiple files opened
+		LogErr("After closeActiveWin")
+End Sub
 
 
-
+Sub LogErr(toWrite As String)
+    Call errorLog.OpenFile(errPathname, errlogTitle)
+    errorLog.WriteLogEntery(" "&toWrite)
+    Call errorLog.CloseFile()
+End Sub
