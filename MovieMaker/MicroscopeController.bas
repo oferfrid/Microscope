@@ -1,3 +1,4 @@
+Option Explicit
 Attribute VB_Name = "MicroscopeController"
 '#Uses "PictureParams.cls"
 '#Uses "PictureController.cls"
@@ -12,7 +13,6 @@ Attribute VB_Name = "MicroscopeController"
 'Description : a class running a microsopy assay
 'Author : Tami4
 
-Option Explicit
 Dim minSecBtwnRounds As Single
 Dim stgControl As New StageController
 Dim locationsControl As New LocationsController
@@ -21,6 +21,8 @@ Dim phaseExposureTime As Integer
 Dim gain As Integer
 Dim pathname As String*255
 Dim locPathname As String*255
+Dim errPathname As String*255
+Dim lifeSaverPath As String
 
 Dim timeint As Integer
 Dim totRoundsNum As Integer
@@ -28,7 +30,9 @@ Dim phaseFocus As New PictureParams
 Dim FocusFinder As New FocusFinder
 Dim zlogFile As New Log
 Dim locLog As New Log
+Dim errorLog As New Log
 Dim zlogTitle As String
+Dim errlogTitle As String
 Dim locationsNum As Integer
 
 Dim locations$()
@@ -50,16 +54,18 @@ Dim secToWait As Single
 Dim initPicArray As Boolean
 Dim toInitLocations As Boolean
 Dim initExp As Boolean
+Dim focusFinderInit As Boolean 'TODO:Check if needed (in base too).
 
 Sub InitializeParams()
 	minSecBtwnRounds=10
 	totRoundsNum = 600
-	BaseRoundNum = 1000
 	focusStep = 0.001
 	timeint = 300
     gain = 255
     roundNum = 0
+    BaseRoundNum = 1000
     zlogTitle = "z coordinates"
+    errlogTitle = "logging"
     picIndex = 0
     locIndex = 0
 	initPicArray = True
@@ -82,6 +88,7 @@ Sub InitializeParams()
 	inPause = True
 End Sub
 Sub MovieMaker()
+
 	Call InitializeParams()
     GetParametersFromUser
     picControl.moveToFilter(PicParamsArray(0))
@@ -99,46 +106,59 @@ Sub MovieMaker()
 End Sub
 
  'Main loop going over all locations, autofocus, acquiring all type of pictures described in picParamsArray
-Sub takeRound()
-	initRoundTime  = Timer
-	Dim locInd As Integer
-	Dim location As location
-	Dim LocationPics As LocationPics
-	locInd = 0
+	Sub takeRound()
+		LogErr("startRound "& roundNum)
+		initRoundTime  = Timer
+		Dim locInd As Integer
+		Dim location As location
+		Dim LocationPics As LocationPics
+		locInd = 0
 
-	Dim endRound As Boolean
-     endRound = False
-     While endRound = False
-      	If locInd = locationsNum Then
-       		endRound = True
-	    End If
-		Set LocationPics =LocationPicsArray(locInd)
-		Set location = LocationPics.GetLocation()
-		locationsControl.moveToLocation(location)
-       Dim aoirect As RECT
-       aoirect =LocationPics.GetAOI
-       FocusFinder.SET_STEP_Z(focusStep)
-       Call FocusFinder.FindFocus (picControl, locInd, aoirect)
-       Call LogCurrZ()
-       'Going over all picParamsArray
-       Dim picParams As PictureParams
-	   Dim i As Integer
-       For i = 0 To LocationPics.GetSize
-   	    Set picParams = LocationPics.GetPicParams(i)
-   	    Debug.Print "picparams: "& i &" filter: "& picParams.GetFilter()
-   	     If(picParams.shouldTakeFrame(roundNum)) Then
-	    	 picControl.PicAcquisition (picParams)
-	    	 ret = IpAoiShow(FRAME_NONE)
-	    	 ret = IpDrSet(DR_BEST, 0, IPNULL)
-    		Call saveCurrFile(picParams,pathname, locInd+1, BaseRoundNum+roundNum)
-    	 End If
-       Next
-       locInd=locInd+1
-	Wend
-	endRoundTime = Timer
-	Debug.Print"finished round: ";roundNum
-	roundNum = roundNum + 1
-End Sub
+		Dim endRound As Boolean
+	     endRound = False
+	     While endRound = False
+	      	If locInd = locationsNum Then
+	       		endRound = True
+		    End If
+			Set LocationPics =LocationPicsArray(locInd)
+			Set location = LocationPics.GetLocation()
+			LogErr("before stage move ")
+			locationsControl.moveToLocation(location)
+			LogErr("after stage move ")
+	       Dim aoirect As RECT
+	       aoirect =LocationPics.GetAOI
+	       LogErr("startFocusing ")
+	       FocusFinder.SET_STEP_Z(focusStep)
+	       Call FocusFinder.FindFocus (locInd, aoirect)
+	       LogErr("endFocusing ")
+	       Call LogCurrZ()
+	       'Going over all picParamsArray
+	       Dim picParams As PictureParams
+		   Dim i As Integer
+	       For i = 0 To LocationPics.GetSize
+	       	Call updateLifeSaverFile()
+	   	    Set picParams = LocationPics.GetPicParams(i)
+	   	    Debug.Print "picparams: "& i &" filter: "& picParams.GetFilter()
+	   	     If(picParams.shouldTakeFrame(roundNum)) Then
+	   	     	LogErr("before pic acquisition ")
+		    	 picControl.PicAcquisition (picParams)
+		    	 LogErr("after pic acquisition ")
+		    	 ret = IpAoiShow(FRAME_NONE)
+		    	 If picParams.IsFlour Then
+		    	 	ret = IpDrSet(DR_BEST, 0, IPNULL)
+		    	 End If
+		    	 LogErr("before saving pic ")
+	    		 Call saveCurrFile(picParams,pathname, locInd+1, BaseRoundNum+roundNum)
+	    		 LogErr("after saving pic ")
+	    	 End If
+	       Next
+	       locInd=locInd+1
+		Wend
+		LogErr("round finished taking time")
+		endRoundTime = Timer
+		Debug.Print"finished round: ";roundNum
+		roundNum = roundNum + 1
+	End Sub
 
 '#################Need to write start/Stop_preview in the PictureController that will not use IpAcqShow, but something from IpDCam...
 '################# Log file stuff and Zlog
@@ -166,6 +186,7 @@ Sub getLocationFromUser()
     FocusFinder.AddLocation(curLoc)
 
     locPathname = IpTrim$(pathname) & "_locations"
+    errPathname = IpTrim$(pathname) &"_errors"
     Debug.Print "path is: " & locPathname
     Call locationsControl.writeLocation(curLoc, locLog,locPathname)
 End Sub
@@ -197,10 +218,14 @@ Sub LogCurrZ()
     zlogFile.WriteZLogEntery(currZ)
     Call zlogFile.CloseFile()
 End Sub
-
+Sub LogErr(toWrite As String)
+    Call errorLog.OpenFile(errPathname, errlogTitle)
+    errorLog.WriteLogEntery(toWrite)
+    Call errorLog.CloseFile()
+End Sub
 Sub saveCurrFile(picParams As PictureParams, pathname As String,locationNum As Integer, roundNum As Integer)
 	Dim fname As String
-	fname = IpTrim$(pathname)&"_"&picParams.GetPicName()&"_"&locationNum+1 &"_"&roundNum+1 &".tif"
+	fname = IpTrim$(pathname)&"_"&picParams.GetPicName()&"_"&locationNum &"_"&roundNum+1 &".tif"
 	ret=IpWsSaveAs(fname, "tif")
 End Sub
 
