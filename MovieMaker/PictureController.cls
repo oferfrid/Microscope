@@ -41,6 +41,7 @@ Private Sub Class_Initialize()
     gain = 255
     timeout = 20000
     focusOffset = 0.0002
+    red_filter=0
 End Sub
 
 Public Sub OpenPhaseShutter()

@@ -29,12 +29,7 @@ Private exposureTime As Single
 Private gain As Integer
 Private timeout As Integer
 Private stgControl As New StageController
-Private red_filter As Integer
-Private cherry_filter As Integer
-Private ko_filter As Integer
-Private gfp_filter As Integer
-Private yfp_filter As Integer
-Private cfp_filter As Integer
+Private empty_filter As Integer
 Private focusOffset As Single
 Private LedFilterNum As Integer
 Private ledController As New CoolLedControl.LedControl
@@ -48,12 +43,7 @@ Private Sub Class_Initialize()
 	errPathname = "ledPictureController_errors"
     gain = 255
     timeout = 20000
-    red_filter = 0
-    cherry_filter = 1
-    ko_filter = 0
-    gfp_filter = 2
-    yfp_filter = 2
-    cfp_filter = 8'???
+    empty_filter = 0
     focusOffset = 0.0002
     LedFilterNum = 0
     ret = IpScopeControl(SCP_SETCURRSHUTTER, 0, LedFilterNum, "", IPNULL)
@@ -160,7 +150,7 @@ End Sub
 
 Public Sub PhaseAcquisition(ByVal picParams As PictureParams)
 LogErr("before phaseAcquition")
-	Call moveToFilterNum(red_filter)
+	Call moveToFilterNum(empty_filter)
 	Dim focusOffset As Single
     focusOffset = picParams.GetFocusOffset/1000
  	If focusOffset <> 0 Then
@@ -225,7 +215,7 @@ End Sub
   LogErr("before  InitPrevViewMode")
    Call FastMode()
     ret = IpDcamGain(0)
-    moveToFilterNum (red_filter)
+    moveToFilterNum (empty_filter)
     LogErr("after  InitPrevViewMode")
 End Sub
 Public Sub SlowMode()
