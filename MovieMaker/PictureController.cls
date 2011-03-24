@@ -27,13 +27,6 @@ Private exposureTime As Single
 Private gain As Integer
 Private timeout As Integer
 Private stgControl As New StageController
-Private red_filter As Integer
-Private cherry_filter As Integer
-Private ko_filter As Integer
-Private gfp_filter As Integer
-Private yfp_filter As Integer
-Private cfp_filter As Integer
-Private focusOffset As Single
 
 Private Sub Class_Initialize()
 	errlogTitle = "logging"
@@ -217,8 +210,7 @@ End Sub
 Public Sub StartPreview()
 	LogErr("Before start PreviewMode")
 	Call InternalMode() 'added 17.5.09
-	ret = IpDcamTriggerMode(DCAM_TRIGGER_INTERNAL)
-    ret = IpScopeSetPosition(SCP_LIGHT_PATH, 1) 'open bottom port
+	ret = IpScopeSetPosition(SCP_LIGHT_PATH, 1) 'open bottom port
     Call OpenPhaseShutter
     ret = IpAcqShow(ACQ_LIVE, 1)
     LogErr("After start PreviewMode")
