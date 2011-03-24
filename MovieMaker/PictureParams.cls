@@ -65,11 +65,12 @@ End Function
 Public Sub SetEmptyFilter()
     mFilter = empty_filter
 End Sub
-Public Function GetFilter() As Integer
-    GetFilter = mFilter
-End Function
+
 Public Function SetFilter(ByVal filterNum As Single)
 	mFilter =filterNum
+End Function
+Public Function GetFilter() As Integer
+    GetFilter = mfilter
 End Function
 Public Sub SetFocusOffset(ByVal offset As Single)
    focusOffset = offset

@@ -26,14 +26,9 @@ Dim errPathname As String*255
 Private exposureTime As Single
 Private gain As Integer
 Private timeout As Integer
+Private focusOffset As Integer
+Private empty_filter As Integer
 Private stgControl As New StageController
-Private red_filter As Integer
-Private cherry_filter As Integer
-Private ko_filter As Integer
-Private gfp_filter As Integer
-Private yfp_filter As Integer
-Private cfp_filter As Integer
-Private focusOffset As Single
 
 Private Sub Class_Initialize()
 	errlogTitle = "logging"
@@ -41,7 +36,7 @@ Private Sub Class_Initialize()
     gain = 255
     timeout = 20000
     focusOffset = 0.0002
-    red_filter=0
+    empty_filter=0
 End Sub
 
 Public Sub OpenPhaseShutter()
@@ -59,13 +54,13 @@ Public Sub ClosePhaseShutter()
 End Sub
 Public Sub OpenFluoShutter()
 	LogErr("before open fluo shutter ")
-	ret = IpScopeControl(SCP_SETCURRSHUTTER, 0, 1, "", IPNULL)
+	ret = IpScopeControl(SCP_SETCURRSHUTTER, 0, 2, "", IPNULL)
     ret = IpScopeSetPosition(SCP_CURRSHUTTER, 1)
     LogErr("before after fluo shutter ")
     End Sub
 Public Sub CloseFluoShutter()
 	LogErr("before close fluo shutter ")
-    ret = IpScopeControl(SCP_SETCURRSHUTTER, 0, 1, "", IPNULL)
+    ret = IpScopeControl(SCP_SETCURRSHUTTER, 0, 2, "", IPNULL)
     ret = IpScopeSetPosition(SCP_CURRSHUTTER, 0)
 	LogErr("after close fluo shutter ")
 End Sub
@@ -113,7 +108,7 @@ Public Sub PicAcquisition(ByVal picParams As PictureParams)
 End Sub
 
 Public Sub PhaseAcquisition(ByVal picParams As PictureParams)
-	Call moveToFilterNum(red_filter)
+	Call moveToFilterNum(empty_filter)
 	Dim focusOffset As Single
     focusOffset = picParams.GetFocusOffset/1000
  	If focusOffset <> 0 Then
@@ -165,31 +160,40 @@ Public Sub FlouAcquisition(ByVal picParams As PictureParams)
         stgControl.MoveZBy(-focusOffset)
     End If
 End Sub
-Public Sub FlouAcquisitionOLD(ByVal picParams As PictureParams)
-    ret = IpDcamScanMode(DCAM_SCANMODE_SLOW)
-    Dim focusOffset As Single
-    focusOffset = picParams.GetFocusOffset/1000
-    If focusOffset <> 0 Then
-        stgControl.MoveZBy(focusOffset)
-    End If
-    Call SetAcquisitionStart(picParams)
-    Call OpenFluoShutter
-    Call TriggerCamera
-    Call CloseFluoShutter
-    Call TransferFrame
-    Call SetAcquisitionEnd
-    Call CloseFluoShutter
-    ret = IpDcamScanMode(DCAM_SCANMODE_FAST)
-    If focusOffset <> 0 Then ' return to focus
-        stgControl.MoveZBy(-focusOffset)
-    End If
-End Sub
+
 Public Sub InitializePreviewMode()
 	LogErr("Before init PreviewMode")
-    ret = IpDcamScanMode(DCAM_SCANMODE_FAST)
+	Call FastMode() 'added 17.5.09
     ret = IpDcamGain(0)
-    moveToFilterNum (red_filter)
+    moveToFilterNum (empty_filter)
     LogErr("After init PreviewMode")
+End Sub
+
+Public Sub SlowMode()
+LogErr("Before slowMode")
+	ret = IpDcamScanMode(DCAM_SCANMODE_SLOW)
+	LogErr("after slowMode")
+End Sub
+Public Sub FastMode()
+LogErr("Before fastMode")
+	ret = IpDcamScanMode(DCAM_SCANMODE_FAST)
+	LogErr("After fastMode")
+End Sub
+Public Sub InternalMode()
+LogErr("Before intermalMode")
+	ret = IpDcamTriggerMode(DCAM_TRIGGER_INTERNAL)
+	LogErr("afterintermalMode")
+End Sub
+Public Sub softwareMode()
+LogErr("Before softwareMode")
+	ret = IpDcamTriggerMode(DCAM_TRIGGER_SOFTWARE)
+	LogErr("After softwareMode")
+End Sub
+
+Public Sub triggerMode()
+LogErr("Before triggerMode")
+	ret=IpDcamStartAcquire(1)   'will start acquisition only upon trigger - added here 18/6/2008
+	LogErr("after triggerMode")
 End Sub
 
 Public Sub StartPreview()
@@ -205,8 +209,8 @@ Public Sub StopPreview()
 	LogErr("Before stop PreviewMode")
     ret = IpAcqShow(ACQ_LIVE, 0)
     Call ClosePhaseShutter
-    ret = IpDcamTriggerMode(DCAM_TRIGGER_SOFTWARE)
-    LogErr("After stop PreviewMode")
+    Call softwareMode()
+LogErr("After stop PreviewMode")
 End Sub
 
 Public Sub SetAcquisitionStart(ByVal picParams As PictureParams)
@@ -240,34 +244,8 @@ Private Sub TransferFrame()
     LogErr("After transferFrame")
 End Sub
 
-  Public Sub SlowMode()
-  LogErr("Before slowMode")
-	ret = IpDcamScanMode(DCAM_SCANMODE_SLOW)
-	LogErr("after slowMode")
-End Sub
-Public Sub FastMode()
-LogErr("Before fastMode")
-	ret = IpDcamScanMode(DCAM_SCANMODE_FAST)
-	LogErr("After fastMode")
-End Sub
-Public Sub InternalMode()
-LogErr("Before intermalMode")
-	ret = IpDcamTriggerMode(DCAM_TRIGGER_INTERNAL)
-	LogErr("afterintermalMode")
-End Sub
-Public Sub softwareMode()
-LogErr("Before softwareMode")
-	ret = IpDcamTriggerMode(DCAM_TRIGGER_SOFTWARE)
-	LogErr("After softwareMode")
-End Sub
-
-Public Sub triggerMode()
-LogErr("Before triggerMode")
-	ret=IpDcamStartAcquire(1)   'will start acquisition only upon trigger - added here 18/6/2008
-	LogErr("after triggerMode")
-End Sub
-Sub CloseActiveWindow
-LogErr("Before closeActiveWin")
+ Sub CloseActiveWindow
+ LogErr("Before closeActiveWin")
 		ret = IpDocClose() 'closing image to avoid multiple files opened
 		LogErr("After closeActiveWin")
 End Sub
