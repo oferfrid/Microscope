@@ -32,6 +32,7 @@ Dim FocusFinder As New FocusFinder
 Dim zlogFile As New Log
 Dim locLog As New Log
 Dim errorLog As New Log
+
 Dim zlogTitle As String
 Dim errlogTitle As String
 Dim locationsNum As Integer
@@ -63,7 +64,6 @@ Sub InitializeParams()
 	timeint = 300
     gain = 255
     roundNum = 0
-    BaseRoundNum = 1000
     zlogTitle = "z coordinates"
     errlogTitle = "logging"
     picIndex = 0

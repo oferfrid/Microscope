@@ -53,14 +53,14 @@ Public Sub ClosePhaseShutter()
 	LogErr("after phase shutter close ")
 End Sub
 Public Sub OpenFluoShutter()
-	LogErr("before open fluo shutter ")
-	ret = IpScopeControl(SCP_SETCURRSHUTTER, 0, 2, "", IPNULL)
+LogErr("before open fluo shutter ")
+	ret = IpScopeControl(SCP_SETCURRSHUTTER, 0, 1, "", IPNULL)
     ret = IpScopeSetPosition(SCP_CURRSHUTTER, 1)
     LogErr("before after fluo shutter ")
     End Sub
 Public Sub CloseFluoShutter()
 	LogErr("before close fluo shutter ")
-    ret = IpScopeControl(SCP_SETCURRSHUTTER, 0, 2, "", IPNULL)
+    ret = IpScopeControl(SCP_SETCURRSHUTTER, 0, 1, "", IPNULL)
     ret = IpScopeSetPosition(SCP_CURRSHUTTER, 0)
 	LogErr("after close fluo shutter ")
 End Sub

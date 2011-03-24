@@ -70,6 +70,8 @@ Public Sub FindFocus(ByVal locationNum As Integer, aoirect As RECT )
     stdcurr = 60000
 
     picControl.SetAcquisitionStart (picParams)
+    Call picControl.InternalMode()
+    Call picControl.fastMode()
     picControl.OpenPhaseShutter
 	Dim i As Integer
     For i = 1 To frameNum
