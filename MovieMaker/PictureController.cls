@@ -40,12 +40,6 @@ Private Sub Class_Initialize()
 	errPathname = "pictureController_errors"&Timer
     gain = 255
     timeout = 20000
-    red_filter = 0
-    cherry_filter = 1
-    ko_filter = 2
-    gfp_filter = 3
-    yfp_filter = 3
-    cfp_filter = 0
     focusOffset = 0.0002
 End Sub
 
@@ -199,7 +193,7 @@ End Sub
 
 Public Sub StartPreview()
 	LogErr("Before start PreviewMode")
-	ret = IpDcamTriggerMode(DCAM_TRIGGER_INTERNAL)
+	Call InternalMode()
     'ret = IpScopeSetPosition(SCP_LIGHT_PATH, 1) 'open bottom port
     Call OpenPhaseShutter
     ret = IpAcqShow(ACQ_LIVE, 1)
@@ -220,9 +214,7 @@ Public Sub SetAcquisitionStart(ByVal picParams As PictureParams)
     SetExposureTime (picParams)
     moveToFilter(picParams)
     ret = IpMacroWait(1)
-    LogErr("Before calling camera triggerMode")
-    ret = IpDcamTriggerMode(DCAM_TRIGGER_SOFTWARE) 'already set for all movies in main 18/6/2008
-    LogErr("Before calling camera to acquire")
+    Call softwareMode()
     ret = IpDcamStartAcquire(1) 'will start acquisition only upon trigger
     LogErr("After setAcquisitionStart")
 End Sub
