@@ -1,1 +1,0 @@
-tlbexp CoolLedControl.dll /out:CoolLedControl.tlb
