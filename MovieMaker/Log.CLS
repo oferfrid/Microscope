@@ -18,7 +18,8 @@ Private miFileNumber As Integer
 Private mbFileHasBeenAssigned As Boolean
 Private mvarTitle As String
 Private fname As String
-Public Sub WriteLine(ByVal vsLine As String)    If mbFileHasBeenAssigned Then
+Public Sub WriteLine(ByVal vsLine As String)
+	If mbFileHasBeenAssigned Then
         Print #miFileNumber, vsLine
     Else
         MsgBox "No file has been assigned"
@@ -108,10 +109,9 @@ End Sub
 Private Function fsCreateFileName() As String
     If fname = "" Then
 	fname = "MicroscopeLog" & Format(CDate(Now()), "YYYY-MM-DD") & ".txt"
-End IffsCreateFileName=fnameEnd Function
-
-
-
+End If
+fsCreateFileName=fname
+End Function
 Private Sub Class_Terminate()
     If mbFileHasBeenAssigned Then
         Close #miFileNumber

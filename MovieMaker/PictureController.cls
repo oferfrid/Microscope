@@ -27,12 +27,7 @@ Private exposureTime As Single
 Private gain As Integer
 Private timeout As Integer
 Private stgControl As New StageController
-Private red_filter As Integer
-Private cherry_filter As Integer
-Private ko_filter As Integer
-Private gfp_filter As Integer
-Private yfp_filter As Integer
-Private cfp_filter As Integer
+Private empty_filter As Integer
 Private focusOffset As Single
 
 Private Sub Class_Initialize()
@@ -41,7 +36,7 @@ Private Sub Class_Initialize()
     gain = 255
     timeout = 20000
     focusOffset = 0.0002
-    red_filter=0
+    empty_filter=0
 End Sub
 
 Public Sub OpenPhaseShutter()
@@ -113,7 +108,7 @@ Public Sub PicAcquisition(ByVal picParams As PictureParams)
 End Sub
 
 Public Sub PhaseAcquisition(ByVal picParams As PictureParams)
-	Call moveToFilterNum(red_filter)
+	Call moveToFilterNum(empty_filter)
 	Dim focusOffset As Single
     focusOffset = picParams.GetFocusOffset/1000
  	If focusOffset <> 0 Then
@@ -188,7 +183,7 @@ Public Sub InitializePreviewMode()
 	LogErr("Before init PreviewMode")
     ret = IpDcamScanMode(DCAM_SCANMODE_FAST)
     ret = IpDcamGain(0)
-    moveToFilterNum (red_filter)
+    moveToFilterNum (empty_filter)
     LogErr("After init PreviewMode")
 End Sub
 
