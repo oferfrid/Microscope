@@ -27,6 +27,8 @@ Private stepZ As Single 'stepZ is the step size made by the stage when scanning 
 Private frameNum As Integer 'framenum is the number of pics taken to determine the best focus.
 
 Private picControl As New PictureController
+'Private picControl As LedPictureController ' changed to the LedPictureController instead of regular on 21.1.10
+
 Private exposureTime As Single
 Private unintializedZ As Single
 
@@ -150,6 +152,9 @@ Public Sub SetExposureTime(ByVal Time As Single)
     exposureTime = Time
     picParams.SetExposureTime (Time)
 End Sub
+'Public Sub setPictureController(picC As LedPictureController)
+	'picControl= picC
+'End Sub
 
 
 Private Sub MoveToLastZ(ByVal locationNum As Integer)  'moves to last z of this locationNum only if it had a good focus last time.

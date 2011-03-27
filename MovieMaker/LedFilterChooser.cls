@@ -17,6 +17,7 @@ Attribute VB_Exposed = True
 'Mail : stefan.de.prins@pandora.be
 
 Option Explicit
+Private filter0 As Integer
  Private filter1 As Integer
 Private filter2 As Integer
 Private filter3 As Integer

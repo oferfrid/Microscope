@@ -1,3 +1,5 @@
+'#Reference {244060F0-28B9-3064-A6EC-96375601231E}#2.0#0#C:\Documents and Settings\NQB\Desktop\LED\LedControl\CoolLedControl.tlb#CoolLed Control dll#CoolLedControl
+Option Explicit
 Attribute VB_Name = "Module1"
 Attribute VB_Name = "MicroscopeController"
 '#Uses "PictureParams.cls"
@@ -9,19 +11,21 @@ Attribute VB_Name = "MicroscopeController"
 '#Uses "Location.cls"
 '#Uses "Log.cls"
 '#Uses "LocationsReader.cls"
+'#Uses "LedFilterChooser.cls"
 'Class name : MicroscopeController2
 'Description : a class running a microsopy assay
 'Author : Tami4
 
-Option Explicit
 Dim minSecBtwnRounds As Single
 Dim stgControl As New StageController
 Dim locationsControl As New LocationsController
-Dim picControl As New LEDPictureController
+Dim picControl As New LedPictureController
 Dim phaseExposureTime As Integer
 Dim gain As Integer
 Dim pathname As String*255
 Dim locPathname As String*255
+Dim errPathname As String*255
+Dim lifeSaverPath As String
 
 Dim timeint As Integer
 Dim totRoundsNum As Integer
@@ -29,7 +33,9 @@ Dim phaseFocus As New PictureParams
 Dim FocusFinder As New FocusFinder
 Dim zlogFile As New Log
 Dim locLog As New Log
+Dim errorLog As New Log
 Dim zlogTitle As String
+Dim errlogTitle As String
 Dim locationsNum As Integer
 
 Dim locations$()
@@ -43,6 +49,7 @@ Dim tempPicParams As New PictureParams
 Dim defaultPicParams As New PictureParams
 Dim initLocations() As location
 Dim roundNum As Integer
+Dim BaseRoundNum As Integer
 Dim focusStep As Single
 Dim initRoundTime As Single
 Dim endRoundTime As Single
@@ -50,15 +57,22 @@ Dim secToWait As Single
 Dim initPicArray As Boolean
 Dim toInitLocations As Boolean
 Dim initExp As Boolean
+Dim focusFinderInit As Boolean
+Dim filterChooser As New LedFilterChooser
+
+
 
 Sub InitializeParams()
+	focusFinderInit=False
 	minSecBtwnRounds=10
 	totRoundsNum = 600
 	focusStep = 0.001
 	timeint = 300
     gain = 255
     roundNum = 0
+    BaseRoundNum = 1000
     zlogTitle = "z coordinates"
+    errlogTitle = "logging"
     picIndex = 0
     locIndex = 0
 	initPicArray = True
@@ -79,8 +93,12 @@ Sub InitializeParams()
     initPicParamsArray(0).copyPictureParams(defaultPicParams)
     initExp = False
 	inPause = True
+	picControl.setFilterChooser(filterChooser) 'This is needed only for the LED version
+	'initializing all leds to 100% added 13 Spet 2010
+	Dim i As Integer
 End Sub
 Sub MovieMaker()
+
 	Call InitializeParams()
     GetParametersFromUser
     picControl.moveToFilter(PicParamsArray(0))
@@ -98,53 +116,65 @@ Sub MovieMaker()
 End Sub
 
  'Main loop going over all locations, autofocus, acquiring all type of pictures described in picParamsArray
-Sub takeRound()
-	initRoundTime  = Timer
-	Dim locInd As Integer
-	Dim location As location
-	Dim LocationPics As LocationPics
-	locInd = 0
+	Sub takeRound()
+		LogErr("startRound "& roundNum)
+		initRoundTime  = Timer
+		Dim locInd As Integer
+		Dim location As location
+		Dim LocationPics As LocationPics
+		locInd = 0
 
-	Dim endRound As Boolean
-     endRound = False
-     While endRound = False
-      	If locInd = locationsNum Then
-       		endRound = True
-	    End If
-		Set LocationPics =LocationPicsArray(locInd)
-		Set location = LocationPics.GetLocation()
-		locationsControl.moveToLocation(location)
-       Dim aoirect As RECT
-       aoirect =LocationPics.GetAOI
-       FocusFinder.SET_STEP_Z(focusStep)
-       Call FocusFinder.FindFocus (locInd, aoirect)
-       Call LogCurrZ()
-       'Going over all picParamsArray
-       Dim picParams As PictureParams
-	   Dim i As Integer
-       For i = 0 To LocationPics.GetSize
-   	    Set picParams = LocationPics.GetPicParams(i)
-   	    Debug.Print "picparams: "& i &" filter: "& picParams.GetFilter()
-   	     If(picParams.shouldTakeFrame(roundNum)) Then
-	    	 picControl.PicAcquisition (picParams)
-	    	 ret = IpAoiShow(FRAME_NONE)
-	    	 If picParams.isFlour Then
-	    	 	ret = IpDrSet(DR_BEST, 0, IPNULL)
+		Dim endRound As Boolean
+	     endRound = False
+	     While endRound = False
+	      	If locInd = locationsNum Then
+	       		endRound = True
+		    End If
+			Set LocationPics =LocationPicsArray(locInd)
+			Set location = LocationPics.GetLocation()
+			LogErr("before stage move ")
+			locationsControl.moveToLocation(location)
+			LogErr("after stage move ")
+	       Dim aoirect As RECT
+	       aoirect =LocationPics.GetAOI
+	       LogErr("startFocusing ")
+	       FocusFinder.SET_STEP_Z(focusStep)
+	       Call FocusFinder.FindFocus (locInd, aoirect)
+	       LogErr("endFocusing ")
+	       Call LogCurrZ()
+	       'Going over all picParamsArray
+	       Dim picParams As PictureParams
+		   Dim i As Integer
+	       For i = 0 To LocationPics.GetSize
+	       	Call updateLifeSaverFile()
+	   	    Set picParams = LocationPics.GetPicParams(i)
+	   	    Debug.Print "picparams: "& i &" filter: "& picParams.GetFilter()
+	   	     If(picParams.shouldTakeFrame(roundNum)) Then
+	   	     	LogErr("before pic acquisition ")
+		    	 picControl.PicAcquisition (picParams)
+		    	 LogErr("after pic acquisition ")
+		    	 ret = IpAoiShow(FRAME_NONE)
+		    	 If picParams.IsFlour Then
+		    	 	ret = IpDrSet(DR_BEST, 0, IPNULL)
+		    	 End If
+		    	 LogErr("before saving pic ")
+	    		 Call saveCurrFile(picParams,pathname, locInd+1, BaseRoundNum+roundNum)
+	    		 LogErr("after saving pic ")
 	    	 End If
-    		 Call saveCurrFile(picParams,pathname, locInd+1, roundNum)
-    	 End If
-       Next
-       locInd=locInd+1
-	Wend
-	endRoundTime = Timer
-	Debug.Print"finished round: ";roundNum
-	roundNum = roundNum + 1
-End Sub
+	       Next
+	       locInd=locInd+1
+		Wend
+		LogErr("round finished taking time")
+		endRoundTime = Timer
+		Debug.Print"finished round: ";roundNum
+		roundNum = roundNum + 1
+	End Sub
 
 '#################Need to write start/Stop_preview in the PictureController that will not use IpAcqShow, but something from IpDCam...
 '################# Log file stuff and Zlog
 Sub GetParametersFromUser()
     ret = IpStGetName("Where to save images?", "c:\nathalie\data\temp\", ".tif", pathname)
+    picControl.setPathname(pathname) 'this is done so that the ledPictureController will log to this path and not the one from a location file if it is used....
 
 End Sub
 'getting locations from user
@@ -167,6 +197,7 @@ Sub getLocationFromUser()
     FocusFinder.AddLocation(curLoc)
 
     locPathname = IpTrim$(pathname) & "_locations"
+    errPathname = IpTrim$(pathname) &"_errors"
     Debug.Print "path is: " & locPathname
     Call locationsControl.writeLocation(curLoc, locLog,locPathname)
 End Sub
@@ -198,7 +229,11 @@ Sub LogCurrZ()
     zlogFile.WriteZLogEntery(currZ)
     Call zlogFile.CloseFile()
 End Sub
-
+Sub LogErr(toWrite As String)
+    Call errorLog.OpenFile(errPathname, errlogTitle)
+    errorLog.WriteLogEntery(toWrite)
+    Call errorLog.CloseFile()
+End Sub
 Sub saveCurrFile(picParams As PictureParams, pathname As String,locationNum As Integer, roundNum As Integer)
 	Dim fname As String
 	fname = IpTrim$(pathname)&"_"&picParams.GetPicName()&"_"&locationNum &"_"&roundNum+1 &".tif"
@@ -210,21 +245,25 @@ Sub RunLocationManager
 	Begin Dialog UserDialog 370,294,.locationFunc ' %GRID:10,7,1,1
 		TextBox 240,210,110,21,.txtRoundsNum
 		Text 20,245,200,14,"focus Step",.Text3
+		Text 20,273,200,14,"starting round number",.Text4
 		ListBox 10,25,180,60,locations(),.locations
 		PushButton 20,98,70,21,"Edit",.btnEditLoc
 		PushButton 130,98,60,21,"Add",.btnAddLoc
 		PushButton 200,49,150,28,"Add locations from file",.btnAddFileLoc
+		PushButton 240,80,100,21,"Map Filters",.btnFMap
 		PushButton 30,133,150,21,"Cont.",.btnStartPause
 		TextBox 240,168,110,21,.txtTimeInt
 		Text 10,168,220,21,"Seconds from 1 round to another:",.Text1
 		Text 20,210,200,14,"rounds number:",.Text2
 		TextBox 240,245,110,21,.txtFocusStep
+		TextBox 240,273,110,21,.txtBaseRoundNum
 		PushButton 280,7,80,28,"Close",.btnClose
 	End Dialog
 	Dim dlg As UserDialog
 	dlg.txtTimeInt = CStr(timeint)
 	dlg.txtRoundsNum = CStr(totRoundsNum)
 	dlg.txtFocusStep = CStr(focusStep)
+	dlg.txtBaseRoundNum = CStr(BaseRoundNum)
 
 	Dim ans As Integer
     Dialog dlg
@@ -258,29 +297,25 @@ Private Function LocationFunc%(DlgItem$, Action%, SuppValue?)
 
 		Case "btnEditLoc"
 			inPause = True
-			If initExp = True Then
-				DlgText "btnStartPause", "cont."
-			End If
 			Call RunPictureManager
 			LocationFunc% = True 'do not exit the dialog
-			inPause = False
-			If initExp = True Then
-				DlgText "btnStartPause", "Pause"
-			End If
+			inPause = True 'Changed 17 Aug2010
+			DlgText "btnStartPause", "cont."
 		Case "btnAddLoc"
 			inPause = True
-			If initExp = True Then
-				DlgText "btnStartPause", "cont."
-			End If
 			Call AddLocation()
 		    LocationFunc% = True 'do not exit the dialog
+		    DlgText "btnStartPause", "cont."
 		Case "btnAddFileLoc"
 			inPause = True
-			If initExp = True Then
-				DlgText "btnStartPause", "cont."
-			End If
+			DlgText "btnStartPause", "cont."
 			Call addLocationsFromFile()
 		    LocationFunc% = True 'do not exit the dialog
+		 Case "btnFMap"
+			Call MapFilters()
+			inPause = True
+		    LocationFunc% = True 'do not exit the dialog
+		    DlgText "btnStartPause", "cont."
 		Case "btnStartPause"
 			If initExp = False Then
 				initExp = True
@@ -296,6 +331,8 @@ Private Function LocationFunc%(DlgItem$, Action%, SuppValue?)
 
 		Case "locations"
 			locIndex =SuppValue
+
+
 End Select
 	' Value changing or button pressed
 		  '################CHanged
@@ -307,6 +344,8 @@ End Select
 				totRoundsNum = DlgText("txtRoundsNum")
 			Case "txtFocusStep"
 				focusStep = DlgText("txtFocusStep")
+			Case "txtBaseRoundNum"
+				BaseRoundNum = DlgText("txtBaseRoundNum")
 		End Select
 	Case 5 ' Idle
 		LocationFunc = True ' Continue getting idle actions
@@ -348,7 +387,7 @@ Sub AddLocation()
 	ReDim Preserve LocationsArray(N)
     locations$(N) = "Location " & N
     DlgListBoxArray "Locations",locations$()
-	Set LocationsArray(N) = New Location
+	Set LocationsArray(N) = New location
 	Set LocationPicsArray(N) = New LocationPics
 	locIndex = N
  	locationsNum =N
@@ -450,7 +489,7 @@ Private Function picParamsFunc%(DlgItem$, Action%, SuppValue?)
 			Call EditPic()
 			picParamsFunc% = True 'do not exit the dialog
 			'inEditMode = False
-			inPause = False
+			inPause = True
 		Case "btnAdd"
 			Call AddPic()
 		    picParamsFunc% = True 'do not exit the dialog
@@ -489,7 +528,7 @@ Private Function EditFunc(DlgItem$, Action%, SuppValue?) As Boolean
 			optBtnVal = DlgValue("GroupFilters")
 			Select Case optBtnVal
 				Case 0
-					tempPicParams.setFilter(0)
+					tempPicParams.SetFilter(0)
 				Case 1
 					tempPicParams.SetFilter(1)
 				Case 2
@@ -513,7 +552,64 @@ Private Function EditFunc(DlgItem$, Action%, SuppValue?) As Boolean
 	Case 6 ' Function key
 	End Select
 End Function
+Sub MapFilters()
+	Begin Dialog UserDialog 480,364,"Edit microscope- leds filter mapping ",.MapFiltersFunc ' %GRID:10,7,1,1
+		GroupBox 50,50,250,60,"Choose LED filter 0",.LEDGroup0
+		OptionGroup .GroupFilters0
+			OptionButton 70,60,100,20,"Empty",.optEmptyL0
+			OptionButton 70,80,100,20,"UV",.OptUV_L0
+			OptionButton 180,60,100,20,"GREEN",.OptGreen_L0
+			OptionButton 180,80,100,20,"RED",.optRed_L0
 
+		GroupBox 50,120,250,60,"Choose LED filter 1",.LEDGroup1
+		OptionGroup .GroupFilters1
+			OptionButton 70,130,100,20,"Empty",.optEmptyL1
+			OptionButton 70,150,100,20,"UV",.OptUV_L1
+			OptionButton 180,130,100,20,"GREEN",.OptGreen_L1
+			OptionButton 180,150,100,20,"RED",.optRed_L1
+
+		GroupBox 50,185,250,60,"Choose LED filter 2",.LEDGroup2
+		OptionGroup .GroupFilters2
+			OptionButton 70,200,100,20,"Empty",.optEmptyL2
+			OptionButton 70,220,100,20,"UV",.OptUV_L2
+			OptionButton 180,200,100,20,"GREEN",.OptGreen_L2
+			OptionButton 180,220,100,20,"RED",.optRed_L2
+
+		GroupBox 50,250,250,60,"Choose LED filter 3",.LEDGroup3
+		OptionGroup .GroupFilters3
+			OptionButton 70,265,100,20,"Empty",.optEmptyL3
+			OptionButton 70,285,100,20,"UV",.OptUV_L3
+			OptionButton 180,265,100,20,"GREEN",.OptGreen_L3
+			OptionButton 180,285,100,20,"RED",.optRed_L3
+		OKButton 180,320,110,21
+	End Dialog
+	Dim dlg As UserDialog
+	dlg.GroupFilters0 = filterChooser.getLedFilter(0)
+	dlg.GroupFilters1 = filterChooser.getLedFilter(1)
+	dlg.GroupFilters2 = filterChooser.getLedFilter(2)
+	dlg.GroupFilters3 = filterChooser.getLedFilter(3)
+
+	Dialog dlg
+End Sub
+Rem See DialogFunc help topic for more information.
+Private Function MapFiltersFunc(DlgItem$, Action%, SuppValue?) As Boolean
+	Select Case Action%
+	Case 1 ' Dialog box initialization
+	Case 2 ' Value changing or button pressed
+		If DlgItem$ = "OK" Then 'ok was clicked
+			filterChooser.setLedFilter(0,DlgValue("GroupFilters0"))
+			filterChooser.setLedFilter(1,DlgValue("GroupFilters1"))
+			filterChooser.setLedFilter(2,DlgValue("GroupFilters2"))
+			filterChooser.setLedFilter(3,DlgValue("GroupFilters3"))
+		End If
+	Case 3 ' TextBox or ComboBox text changed
+	Case 4 'Focus changed
+	Case 5 ' Idle
+
+		Rem Wait .1 : EditFunc = True ' Continue getting idle actions
+	Case 6 ' Function key
+	End Select
+End Function
 Function getSecToWaitWithMinimum(minimumWait As Single) As Single
 	Dim ans As Single
 	Dim currTime As Single
@@ -566,6 +662,50 @@ Sub setInitLocations()
 
 End Sub
 
+Sub openLed()
+Dim filterNum As Integer
+Dim expo As Integer
+	IpStGetInt("What's the filter num? (1-3)", filterNum, 1, 0, 3)
+	IpStGetInt("milliseconds expo?", expo, 1000, 0, 20000)
 
+	Dim PictureParams As New PictureParams
+	Call PictureParams.SetFluo()
+    PictureParams.SetFrameFreq (1)
+    PictureParams.SetExposureTime (expo)
+    PictureParams.SetFilter(filterNum)
+    PictureParams.SetGain (0)
+    picControl.ClosePhaseShutter
+	picControl.PicAcquisition (PictureParams)
+	picControl.disconnectLed
+	End
+End Sub
 
+Sub changeLedIntensity()
+	Dim filterNum As Integer
+	Dim intens As Integer
+	IpStGetInt("What's the filter num intensity you want changed? (1-3)", filterNum, 1, 0, 3)
+	IpStGetInt("What's the intensity? (0-100)", intens, 100,0 , 100)
+	Debug.Print "before changing intensity"
+	Call picControl.changeIntensity(filterNum,intens)
+	picControl.disconnectLed
+	Debug.Print "after changing intensity"
+	End
+End Sub
+Sub stgTest()
+	Call stgControl.MoveTo(-0.4532,-4.6034,2.697857)
 
+End Sub
+Sub disconnectLed()
+	picControl.disconnectLed
+End Sub
+'writes the current time to the lifeSaverUpdate file, overriding the current file
+Sub updateLifeSaverFile()
+	Dim lifeSaverPath As String
+	lifeSaverPath = "C:\Documents and Settings\Administrator\Desktop\lifeSaverUpdates\lifeSaverIproUpdate.txt"
+	Dim iFileNo As Integer
+	iFileNo = FreeFile
+	Debug.Print "lifeSaverPath is: " & lifeSaverPath
+	Open lifeSaverPath For Output As iFileNo
+	Print #iFileNo, Now()
+	Close #iFileNo
+End Sub

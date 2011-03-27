@@ -11,7 +11,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
-'#Reference {244060F0-28B9-3064-A6EC-96375601231E}#2.0#0#C:\Documents and Settings\Administrator\Desktop\LED\LedControl\CoolLedControl.tlb#CoolLed Control dll
+'#Reference {244060F0-28B9-3064-A6EC-96375601231E}#2.0#0#C:\Documents and Settings\NQB\Desktop\LED\LedControl\CoolLedControl.tlb#CoolLed Control dll#CoolLedControl
 '#Uses "PictureParams.cls"
 '#Uses "StageController.cls"
 '#Uses "LedFilterChooser.cls"
@@ -50,8 +50,8 @@ Private Sub Class_Initialize()
     ret = IpScopeSetPosition(SCP_CURRSHUTTER, 1)
     ledController.openSock()
     Dim i As Integer
-    For i= 1 To 4 'set all leds to maximum
-    	changeIntensity(i,100)
+    For i= 1 To 3 'set all leds to maximum
+    	Call changeIntensity(i,100)
    	Next i
 End Sub
 
@@ -292,13 +292,9 @@ End Sub
 
 
 Public Sub changeIntensity(ByVal filterNum As Integer,ByVal intens As Integer )
-	Dim ret As String
 	Dim LedFilterNum As Integer
 	LedFilterNum = LedFilterChooser.getLedFilter(filterNum)
-	ret = ledController.changeIntensity(LedFilterNum, intens)
-	Debug.Print ret
-
-
+	ledController.changeIntensity(LedFilterNum, intens)	
 End Sub
 Public Sub setPathname(path As String)
 	errPathname = IpTrim$(path) &"_ledPictureController_errors"
