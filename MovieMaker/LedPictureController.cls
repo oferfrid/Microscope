@@ -36,8 +36,6 @@ Private ledController As New CoolLedControl.LedControl
 Private openShutTime As Single 
 Private closeShutTime As Single 
 Private LedFilterChooser As New LedFilterChooser
-
-
 Private Sub Class_Initialize()
 	errlogTitle = "logging"
 	errPathname = "ledPictureController_errors"
@@ -50,9 +48,9 @@ Private Sub Class_Initialize()
     ret = IpScopeSetPosition(SCP_CURRSHUTTER, 1)
     ledController.openSock()
     Dim i As Integer
-    For i= 1 To 4 'set all leds to maximum
-    	changeIntensity(i,100)
-   	Next i
+	For i= 1 To 3 'set all leds to maximum 
+   		Call ledController.changeIntensity(i, 100)	
+   	Next i   
 End Sub
 
 Private Sub Class_Terminate()
@@ -290,15 +288,10 @@ End Sub
 		LogErr("after  closeActWin")
 End Sub
 
-
-Public Sub changeIntensity(ByVal filterNum As Integer,ByVal intens As Integer )
-	Dim ret As String
-	Dim LedFilterNum As Integer
-	LedFilterNum = LedFilterChooser.getLedFilter(filterNum)
-	ret = ledController.changeIntensity(LedFilterNum, intens)
-	Debug.Print ret
-
-
+Public Sub changeIntensity(ByVal filterNum As Integer,ByVal intens As Long )
+	Dim LedFilterNum As Long
+	LedFilterNum = CLng(LedFilterChooser.getLedFilter(filterNum))
+	ledController.changeIntensity(LedFilterNum, intens)	
 End Sub
 Public Sub setPathname(path As String)
 	errPathname = IpTrim$(path) &"_ledPictureController_errors"

@@ -96,13 +96,8 @@ Sub InitializeParams()
 	picControl.setFilterChooser(filterChooser) 'This is needed only for the LED version
 	'initializing all leds to 100% added 13 Spet 2010
 	Dim i As Integer
-	For i=1 To 4
-	picControl.changeIntensity(i,100)
-	Next i
-
 End Sub
 Sub MovieMaker()
-
 	Call InitializeParams()
     GetParametersFromUser
     picControl.moveToFilter(PicParamsArray(0))
@@ -113,6 +108,7 @@ Sub MovieMaker()
 	Dim firstLocPic As New LocationPics
 	Call firstLocPic.AddAllPictures(initPicParamsArray)
 	Set LocationPicsArray(0) = firstLocPic
+	
 	While True
     	Call RunLocationManager
     	Call takeRound()
@@ -673,7 +669,7 @@ Dim expo As Integer
 	IpStGetInt("milliseconds expo?", expo, 1000, 0, 20000)
 
 	Dim PictureParams As New PictureParams
-	PictureParams.SetFluo()
+	Call PictureParams.SetFluo()
     PictureParams.SetFrameFreq (1)
     PictureParams.SetExposureTime (expo)
     PictureParams.SetFilter(filterNum)
@@ -686,17 +682,17 @@ End Sub
 
 Sub changeLedIntensity()
 	Dim filterNum As Integer
-	Dim intens As Long
+	Dim intens As Integer
 	IpStGetInt("What's the filter num intensity you want changed? (1-3)", filterNum, 1, 0, 3)
-	IpStGetLong("What's the intensity? (0-100)", intens, 100,0 , 100)
+	IpStGetInt("What's the intensity? (0-100)", intens, 100,0 , 100)
 	Debug.Print "before changing intensity"
-	picControl.changeIntensity(filterNum,intens)
+	Call picControl.changeIntensity(filterNum,intens)
 	picControl.disconnectLed
 	Debug.Print "after changing intensity"
 	End
 End Sub
 Sub stgTest()
-	stgControl.MoveTo(-0.4532,-4.6034,2.697857)
+	Call stgControl.MoveTo(-0.4532,-4.6034,2.697857)
 
 End Sub
 Sub disconnectLed()
