@@ -1,4 +1,5 @@
 Option Explicit
+Attribute VB_Name = "Module1"
 Attribute VB_Name = "MicroscopeController"
 '#Uses "PictureParams.cls"
 '#Uses "PictureController.cls"
@@ -54,7 +55,6 @@ Dim secToWait As Single
 Dim initPicArray As Boolean
 Dim toInitLocations As Boolean
 Dim initExp As Boolean
-Dim focusFinderInit As Boolean 'TODO:Check if needed (in base too).
 
 Sub InitializeParams()
 	minSecBtwnRounds=10
@@ -234,6 +234,7 @@ Sub RunLocationManager
 	Begin Dialog UserDialog 370,294,.locationFunc ' %GRID:10,7,1,1
 		TextBox 240,210,110,21,.txtRoundsNum
 		Text 20,245,200,14,"focus Step",.Text3
+		Text 20,273,200,14,"starting round number",.Text4
 		ListBox 10,25,180,60,locations(),.locations
 		PushButton 20,98,70,21,"Edit",.btnEditLoc
 		PushButton 130,98,60,21,"Add",.btnAddLoc
@@ -251,7 +252,6 @@ Sub RunLocationManager
 	dlg.txtRoundsNum = CStr(totRoundsNum)
 	dlg.txtFocusStep = CStr(focusStep)
 	dlg.txtBaseRoundNum = CStr(BaseRoundNum)
-
 
 	Dim ans As Integer
     Dialog dlg
@@ -287,13 +287,13 @@ Private Function LocationFunc%(DlgItem$, Action%, SuppValue?)
 			inPause = True
 			Call RunPictureManager
 			LocationFunc% = True 'do not exit the dialog
-			inPause = True
+			inPause = True 'Changed 17 Aug2010
 			DlgText "btnStartPause", "cont."
 		Case "btnAddLoc"
 			inPause = True
-			DlgText "btnStartPause", "cont."
 			Call AddLocation()
 		    LocationFunc% = True 'do not exit the dialog
+		    DlgText "btnStartPause", "cont."
 		Case "btnAddFileLoc"
 			inPause = True
 			DlgText "btnStartPause", "cont."
@@ -314,6 +314,8 @@ Private Function LocationFunc%(DlgItem$, Action%, SuppValue?)
 
 		Case "locations"
 			locIndex =SuppValue
+
+
 End Select
 	' Value changing or button pressed
 		  '################CHanged
@@ -368,7 +370,7 @@ Sub AddLocation()
 	ReDim Preserve LocationsArray(N)
     locations$(N) = "Location " & N
     DlgListBoxArray "Locations",locations$()
-	Set LocationsArray(N) = New Location
+	Set LocationsArray(N) = New location
 	Set LocationPicsArray(N) = New LocationPics
 	locIndex = N
  	locationsNum =N
@@ -413,10 +415,10 @@ Sub EditPic()
 			OptionButton 10,91,120,14,"Fluoresence",.btnFluo
 		GroupBox 170,49,250,91,"Choose Filter",.FilterGroup
 		OptionGroup .GroupFilters
-			OptionButton 180,77,110,21,"empty",.optEmpty_F
-			OptionButton 180,105,110,21,"Cherry",.OptCherry_F
-			OptionButton 280,77,120,21,"KO",.OptKO_F
-			OptionButton 300,105,110,21,"YFP",.optYFP_F
+			OptionButton 180,77,110,21,"0",.optEmpty_F
+			OptionButton 180,105,110,21,"1",.OptCherry_F
+			OptionButton 280,77,120,21,"2",.OptKO_F
+			OptionButton 300,105,110,21,"3",.optYFP_F
 		Text 20,294,330,14,"1 means every round, 2 every second round etc.",.Text6
 	End Dialog
 	Dim dlg As UserDialog
@@ -470,7 +472,7 @@ Private Function picParamsFunc%(DlgItem$, Action%, SuppValue?)
 			Call EditPic()
 			picParamsFunc% = True 'do not exit the dialog
 			'inEditMode = False
-			inPause = False
+			inPause = True
 		Case "btnAdd"
 			Call AddPic()
 		    picParamsFunc% = True 'do not exit the dialog
@@ -509,13 +511,13 @@ Private Function EditFunc(DlgItem$, Action%, SuppValue?) As Boolean
 			optBtnVal = DlgValue("GroupFilters")
 			Select Case optBtnVal
 				Case 0
-					tempPicParams.SetEmptyFilter
+					tempPicParams.SetFilter(0)
 				Case 1
-					tempPicParams.SetCherryFilter
+					tempPicParams.SetFilter(1)
 				Case 2
-					tempPicParams.SetKOFilter
+					tempPicParams.SetFilter(2)
 				Case 3
-					tempPicParams.SetYFPFilter
+					tempPicParams.SetFilter(3)
 			End Select
 		End If
 		If initPicArray Then
@@ -585,9 +587,14 @@ Sub setInitLocations()
 	Next i
 
 End Sub
-
-
-
-
-
-
+'writes the current time to the lifeSaverUpdate file, overriding the current file
+Sub updateLifeSaverFile()
+	Dim lifeSaverPath As String
+	lifeSaverPath = "C:\Documents and Settings\NQB\Desktop\microscope scripts\microscope scripts LED 1.1\lifeSaverIproUpdate.txt"
+	Dim iFileNo As Integer
+	iFileNo = FreeFile
+	Debug.Print "lifeSaverPath is: " & lifeSaverPath
+	Open lifeSaverPath For Output As iFileNo
+	Print #iFileNo, Now()
+	Close #iFileNo
+End Sub

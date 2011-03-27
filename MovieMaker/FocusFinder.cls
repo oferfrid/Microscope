@@ -76,7 +76,7 @@ Public Sub FindFocus(ByVal locationNum As Integer, aoirect As RECT )
 		stgControl.MoveZBy(stepZ)
     	zcoord = stgControl.GetZCoord()
     	Debug.Print i; " z "; zcoord; "  ";
-    	picControl.QuickPhaseAcquisition()
+    	picControl.QuickPhaseAcquisition(picParams)
     	If(i=1) Then
 			ret = IpDrSet(DR_RANGE, -1, IPNULL) 'get all range display
 		End If
@@ -149,6 +149,7 @@ Public Sub SetExposureTime(ByVal Time As Single)
     exposureTime = Time
     picParams.SetExposureTime (Time)
 End Sub
+
 
 Private Sub MoveToLastZ(ByVal locationNum As Integer)  'moves to last z of this locationNum only if it had a good focus last time.
 		Dim z As Single
