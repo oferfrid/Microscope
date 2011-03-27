@@ -11,7 +11,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
-'#Reference {244060F0-28B9-3064-A6EC-96375601231E}#2.0#0#C:\Documents and Settings\NQB\Desktop\LED\LedControl\CoolLedControl.tlb#CoolLed Control dll#CoolLedControl
+'#Reference {244060F0-28B9-3064-A6EC-96375601231E}#2.0#0#C:\Documents and Settings\Administrator\Desktop\LED\LedControl\CoolLedControl.tlb#CoolLed Control dll
 '#Uses "PictureParams.cls"
 '#Uses "StageController.cls"
 '#Uses "LedFilterChooser.cls"

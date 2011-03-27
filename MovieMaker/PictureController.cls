@@ -205,7 +205,6 @@ Public Sub StopPreview()
 End Sub
 
 Public Sub SetAcquisitionStart(ByVal picParams As PictureParams)
-	LogErr("Before setAcquisitionStart")
     SetGain (picParams)
     SetExposureTime (picParams)
     moveToFilter(picParams)
