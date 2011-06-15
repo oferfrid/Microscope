@@ -43,15 +43,19 @@ Private picParams As New PictureParams
 Private Sub Class_Initialize()
     stepZ = 0.001
     frameNum = 20
-    exposureTime = 40
+    exposureTime = 10
     picParams.SetFrameFreq (1)
     picParams.SetExposureTime (exposureTime)
     picParams.SetEmptyFilter
-    picParams.SetGain (100)
+    picParams.SetGain (0)
     unintializedZ = 10000
     locationsNum=0
 
 End Sub
+
+
+
+
 Public Sub FindFocus(ByVal locationNum As Integer, aoirect As RECT )
     Dim stdmax As Single
     Dim stdcurr As Single
@@ -152,6 +156,13 @@ Public Sub SetExposureTime(ByVal Time As Single)
     exposureTime = Time
     picParams.SetExposureTime (Time)
 End Sub
+Public Sub SetGain(ByVal gain As Integer)
+	picParams.SetGain(gain)
+End Sub
+
+
+
+
 'Public Sub setPictureController(picC As LedPictureController)
 	'picControl= picC
 'End Sub
