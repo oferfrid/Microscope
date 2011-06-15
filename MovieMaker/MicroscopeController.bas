@@ -45,6 +45,7 @@ Dim PicParamsArray() As PictureParams
 Dim initPicParamsArray() As PictureParams
 Dim tempPicParams As New PictureParams
 Dim defaultPicParams As New PictureParams
+Dim focusPicParams As New PictureParams
 Dim initLocations() As location
 Dim roundNum As Integer
 Dim BaseRoundNum As Integer
@@ -55,6 +56,7 @@ Dim secToWait As Single
 Dim initPicArray As Boolean
 Dim toInitLocations As Boolean
 Dim initExp As Boolean
+Private frameNum As Integer
 
 Sub InitializeParams()
 	minSecBtwnRounds=10
@@ -62,6 +64,7 @@ Sub InitializeParams()
 	focusStep = 0.001
 	timeint = 300
     gain = 255
+    frameNum=20
     roundNum = 0
     BaseRoundNum = 1000
     zlogTitle = "z coordinates"
@@ -81,6 +84,7 @@ Sub InitializeParams()
     defaultPicParams.SetExposureTime (40)
     defaultPicParams.SetEmptyFilter
     defaultPicParams.SetGain (255)
+    focusPicParams.copyPictureParams(defaultPicParams)
     Set PicParamsArray(0) = defaultPicParams
     Set initPicParamsArray(0) = New PictureParams
     initPicParamsArray(0).copyPictureParams(defaultPicParams)
@@ -246,6 +250,7 @@ Sub RunLocationManager
 		TextBox 240,245,110,21,.txtFocusStep
 		TextBox 240,273,110,21,.txtBaseRoundNum
 		PushButton 280,7,80,28,"Close",.btnClose
+		PushButton 220,110,140,21,"Auto Focus Settings",.btnAutoFoc
 	End Dialog
 	Dim dlg As UserDialog
 	dlg.txtTimeInt = CStr(timeint)
@@ -314,7 +319,11 @@ Private Function LocationFunc%(DlgItem$, Action%, SuppValue?)
 
 		Case "locations"
 			locIndex =SuppValue
-
+		Case "btnAutoFoc"
+			Call SetAutoFocus()
+			inPause = True
+		    LocationFunc% = True 'do not exit the dialog
+		    DlgText "btnStartPause", "cont."
 
 End Select
 	' Value changing or button pressed
@@ -535,6 +544,45 @@ Private Function EditFunc(DlgItem$, Action%, SuppValue?) As Boolean
 	Case 6 ' Function key
 	End Select
 End Function
+Sub SetAutoFocus()
+	Begin Dialog UserDialog 360,150,"Edit AutoFocus Parameters",.SetAutoFocusFunc ' %GRID:10,7,1,1
+		Text 20,10,100,14,"number of frames",.Text4
+		TextBox 140,10,100,21,.txtFrameNum
+		Text 20,50,100,14,"Exposure(sec)",.Text3
+		TextBox 140,50,100,21,.txtExposureTime
+		Text 20,90,100,14,"gain:",.Text2
+		TextBox 140,90,100,21,.txtGain
+		OKButton 80,120,110,21
+
+
+	End Dialog
+	Dim dlg As UserDialog
+	dlg.txtExposureTime = CStr(focusPicParams.GetExposureTime)
+	dlg.txtGain = CStr(focusPicParams.GetGain)
+	dlg.txtFrameNum = CStr(frameNum)
+	Dialog dlg
+End Sub
+Rem See DialogFunc help topic for more information.
+Private Function SetAutoFocusFunc(DlgItem$, Action%, SuppValue?) As Boolean
+	Select Case Action%
+	Case 1 ' Dialog box initialization
+	Case 2 ' Value changing or button pressed
+		If DlgItem$ = "OK" Then 'ok was clicked
+		FocusFinder.SetFrameNum(DlgText("txtFrameNum"))
+		FocusFinder.SetGain(DlgText("txtGain"))
+		FocusFinder.SetExposureTime(DlgText("txtExposureTime"))
+		focusPicParams.SetGain(DlgText("txtGain"))
+		focusPicParams.SetExposureTime(DlgText("txtExposureTime"))
+		frameNum=DlgText("txtFrameNum")
+	End If
+	Case 3 ' TextBox or ComboBox text changed
+	Case 4 'Focus changed
+	Case 5 ' Idle
+
+		Rem Wait .1 : EditFunc = True ' Continue getting idle actions
+	Case 6 ' Function key
+	End Select
+End Function
 
 Function getSecToWaitWithMinimum(minimumWait As Single) As Single
 	Dim ans As Single
@@ -590,7 +638,7 @@ End Sub
 'writes the current time to the lifeSaverUpdate file, overriding the current file
 Sub updateLifeSaverFile()
 	Dim lifeSaverPath As String
-	lifeSaverPath = "C:\Documents and Settings\NQB\Desktop\microscope scripts\microscope scripts LED 1.1\lifeSaverIproUpdate.txt"
+	lifeSaverPath = "C:\Documents and Settings\NQB\Desktop\microscope scripts\lifeSaverUpdate\lifeSaverIproUpdate.txt"
 	Dim iFileNo As Integer
 	iFileNo = FreeFile
 	Debug.Print "lifeSaverPath is: " & lifeSaverPath

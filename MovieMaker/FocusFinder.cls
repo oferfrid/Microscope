@@ -149,7 +149,9 @@ Public Sub SetExposureTime(ByVal Time As Single)
     exposureTime = Time
     picParams.SetExposureTime (Time)
 End Sub
-
+Public Sub SetGain(ByVal gain As Integer)
+	picParams.SetGain(gain)
+End Sub
 
 Private Sub MoveToLastZ(ByVal locationNum As Integer)  'moves to last z of this locationNum only if it had a good focus last time.
 		Dim z As Single
