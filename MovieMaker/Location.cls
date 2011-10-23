@@ -15,6 +15,25 @@ Attribute VB_Exposed = True
 'Description : a container for parameters involving location (currently just a containier for coordinates)
 'Author : Stefan De Prins
 'Mail : stefan.de.prins@pandora.be
+' MovieMaker is an ImagePro sofware for time lapsed serial microscope monitoring.
+' Copyright 2011 Sivan Pearl published under GPLv3,
+' this software was developed in Prof. Nathalie Q. Balaban's lab, at the Hebrew University , Jerusalem , Israel .
+'
+' This file is part of MovieMaker.
+'
+' MovieMaker is free software: you can redistribute it and/or modify
+' it under the terms of the GNU General Public License as published by
+' the Free Software Foundation, either version 3 of the License, or
+' (at your option) any later version.
+'
+' MovieMaker is distributed in the hope that it will be useful,
+' but WITHOUT ANY WARRANTY; without even the implied warranty of
+' MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+' GNU General Public License for more details.
+'
+' You should have received a copy of the GNU General Public License
+' along with MovieMaker. If not, see <http:'www.gnu.org/licenses/>.
+
 
 Option Explicit
 Private x As Single
